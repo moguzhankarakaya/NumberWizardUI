@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using TMPro;
 using UnityEngine;
-using TMPro;
 
 public class NumberWizard : MonoBehaviour
 {
@@ -10,9 +8,12 @@ public class NumberWizard : MonoBehaviour
     [SerializeField] private TextMeshProUGUI guessText;
     [SerializeField] private TextMeshProUGUI dialogText;
     [SerializeField] private WizardsDialog[] dialogs;
-    int guess;
+    [SerializeField] private WizardsDialog[] endGameDialogs;
+
     bool wellcomeDialog = true;
-    int selectedDialog = 0;
+    int selectedDialog  = 0;
+    int prevGuess       = 0;
+    int guess           = 0;
 
     void Start()
     {
@@ -22,43 +23,76 @@ public class NumberWizard : MonoBehaviour
     private void StartGame()
     {
         NextGuess();
-        max = max + 1;
     }
 
     public void onPressHigh()
     {
-        min = guess;
+        min = guess + 1;
+        if (min > max)
+            min = max;
         NextGuess();
     }
 
     public void onPressLow()
     {
-        max = guess;
+        max = guess - 1;
+        if (max < min)
+            max = min;
         NextGuess();
     }
 
     private void NextGuess()
     {
-        guess = (max + min) / 2;
+        prevGuess      = guess;
+        guess          = Random.Range(min, max + 1);
         guessText.text = guess.ToString();
+        loadWizardDialog();
+    }
+
+    private void loadWizardDialog()
+    {
+        if (prevGuess == guess)
+        {
+            if (endGameDialogs.Length > 0)
+            {
+                int candidateDialog = selectedDialog;
+                do
+                {
+                    candidateDialog = Random.Range(0, endGameDialogs.Length);
+                }
+                while (selectedDialog == candidateDialog);
+
+                selectedDialog = candidateDialog;
+                dialogText.text = endGameDialogs[selectedDialog].getDialog();
+            }
+            return;
+        }
+
         if (dialogs.Length > 0)
         {
-            if (wellcomeDialog)
+            if (wellcomeDialog || dialogs.Length == 1)
             {
                 dialogText.text = dialogs[0].getDialog();
                 wellcomeDialog = false;
             }
+            else if (dialogs.Length == 2)
+            {
+                dialogText.text = dialogs[1].getDialog();
+            }
             else
             {
-                int candidateDialog = Random.Range(1, dialogs.Length + 1);
-                if (dialogs.Length > 2)
+                int candidateDialog = selectedDialog;
+
+                do
                 {
-                    while (candidateDialog != selectedDialog)
-                        candidateDialog = Random.Range(1, dialogs.Length + 1);
+                    candidateDialog = Random.Range(1, dialogs.Length);
                 }
+                while (selectedDialog == candidateDialog);
+
                 selectedDialog = candidateDialog;
                 dialogText.text = dialogs[selectedDialog].getDialog();
             }
+            return;
         }
     }
 }
